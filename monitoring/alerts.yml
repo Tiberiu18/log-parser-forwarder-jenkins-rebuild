@@ -1,0 +1,29 @@
+groups:
+  - name: parser_alerts
+    rules:
+      - alert: ParserDown
+        expr: up{job="parser"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Parser container is down"
+          description: "Unable to scrape log-parser for more than 2 minutes."
+
+      - alert: ParserErrorRateHigh
+        expr: rate(parser_errors_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate for log-parser service"
+          description: " {{ $value }} errors in parser."
+
+      - alert: APIIsDown
+        expr: up{job="log-receiver-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations: 
+          summary: "NodeJS API is down"
+          description: "Unable to scrape NodeJS API for more than 1 minute."

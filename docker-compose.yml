@@ -1,0 +1,55 @@
+services:
+  log-receiver-api:
+    build: ./log-receiver-api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./logs:/usr/src/logs
+    restart: always
+    
+  log-parser:
+    build: ./parser
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - log-receiver-api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - API_URL=${NODEJS_API_POST_URL}
+
+  dozzle:
+    image: amir20/dozzle:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+    depends_on:
+      - log-parser
+      - log-receiver-api
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+

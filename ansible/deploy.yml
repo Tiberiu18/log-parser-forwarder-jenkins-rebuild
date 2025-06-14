@@ -1,0 +1,63 @@
+  - name: Deploy log-parser-forwarder on EC2
+    hosts: ec2
+    become: yes
+    tasks:
+      - name: Ensure git is installed
+        apt:
+          name: git
+          state: present
+        when: ansible_os_family == "Debian"
+
+      - name: Clone or update repo
+        become_user: ubuntu
+        git:
+          repo: https://github.com/Tiberiu18/log-parser-forwarder.git
+          dest: /home/ubuntu/log-parser-forwarder
+          version: main
+          update: yes
+
+      - name: Install dependencies
+        apt:
+          name:
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - software-properties-common
+          state: present
+        when: ansible_os_family == "Debian"
+      
+      - name: Add Docker GPG key
+        apt_key:
+          url: https://download.docker.com/linux/ubuntu/gpg
+          state: present
+        when: ansible_os_family == "Debian"
+
+      - name: Add Docker repo
+        apt_repository:
+          repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+          state: present
+        when: ansible_os_family == "Debian"
+
+      - name: Install Docker
+        apt:
+          name: docker-ce
+          state: present
+          update_cache: yes
+        when: ansible_os_family == "Debian"
+
+      - name: Add ubuntu user to a docker group
+        user:
+          name: ubuntu
+          groups: docker
+          append: yes
+
+      - name: Enable and start Docker service
+        systemd:
+          name: docker
+          state: started
+          enabled: yes
+
+      - name: Run docker compose
+        shell: docker compose up --build -d
+        args:
+          chdir: /home/ubuntu/log-parser-forwarder
