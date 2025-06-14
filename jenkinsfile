@@ -4,7 +4,7 @@ pipeline {
 	stages {
 		stage('Checkout') {
 			steps {
-				git 'https://github.com/Tiberiu18/log-parser-forwarder-jenkins-rebuild.git'
+				git branch: 'main', url: 'https://github.com/Tiberiu18/log-parser-forwarder-jenkins-rebuild.git'
 			}
 		}			
 		
