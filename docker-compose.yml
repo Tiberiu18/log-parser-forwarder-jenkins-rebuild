@@ -31,11 +31,12 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./monitoring:/etc/config
     depends_on:
       - log-parser
       - log-receiver-api
+    command:
+      - --config.file=/etc/config/prometheus.yml
 
   grafana:
     image: grafana/grafana-oss:latest
@@ -51,5 +52,7 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./monitoring:/etc/config
+    command:
+      - --config.file=/etc/config/alertmanager.yml
 
