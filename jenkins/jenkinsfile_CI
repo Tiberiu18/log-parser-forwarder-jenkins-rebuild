@@ -1,0 +1,56 @@
+pipeline {
+	agent any
+
+
+	stages {
+
+		stage('Checkout') {
+			steps {
+				git branch: 'main', url: 'https://github.com/Tiberiu18/log-parser-forwarder-jenkins-rebuild.git'
+			}
+		}			
+		
+		stage('Clean Docker state') {
+			steps {
+				dir("${env.WORKSPACE}") {
+					sh '''
+						docker-compose down -v --remove-orphans || true
+					'''
+				}
+			}
+		}
+	
+		stage('Build containers') {
+			steps {
+				dir("${env.WORKSPACE}") {
+					sh 'docker-compose build'
+				}
+			}
+		}
+
+		stage('Start services') {
+			steps {
+				dir("${env.WORKSPACE}") {
+					sh 'docker-compose up -d --force-recreate'
+				}
+			}
+		}
+
+		stage('Test API') {
+			steps {
+				sh '''
+					sleep 5
+					docker-compose exec -T log-receiver-api curl -sf http://localhost:3000/health
+				'''
+			}
+		}
+
+		stage('Teardown') {
+			steps {
+				dir("${env.WORKSPACE}") {
+					sh 'docker-compose down'
+				}
+			}
+		}
+	}	
+}

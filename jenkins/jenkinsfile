@@ -1,55 +1,51 @@
 pipeline {
-	agent any
+    agent any
 
-	stages {
+    environment {
+        TF_DIR = 'terraform/projectAWS'
+        ANSIBLE_DIR = 'ansible'
+        INVENTORY_FILE = "${env.ANSIBLE_DIR}/inventory.ini"
+    }
 
-		stage('Checkout') {
-			steps {
-				git branch: 'main', url: 'https://github.com/Tiberiu18/log-parser-forwarder-jenkins-rebuild.git'
-			}
-		}			
-		
-		stage('Clean Docker state') {
-			steps {
-				dir("${env.WORKSPACE}") {
-					sh '''
-						docker-compose down -v --remove-orphans || true
-					'''
-				}
-			}
-		}
-	
-		stage('Build containers') {
-			steps {
-				dir("${env.WORKSPACE}") {
-					sh 'docker-compose build'
-				}
-			}
-		}
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Tiberiu18/log-parser-forwarder-jenkins-rebuild.git'
+            }
+        }
 
-		stage('Start services') {
-			steps {
-				dir("${env.WORKSPACE}") {
-					sh 'docker-compose up -d --force-recreate'
-				}
-			}
-		}
+        stage('Terraform AWS') {
+            steps {
+                dir("${env.TF_DIR}") {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
 
-		stage('Test API') {
-			steps {
-				sh '''
-					sleep 5
-					docker-compose exec -T log-receiver-api curl -sf http://localhost:3000/health
-				'''
-			}
-		}
+        stage('Generate Ansible Inventory') {
+            steps {
+                script {
+                    def publicIp = sh(
+                        script: "cd ${env.TF_DIR} && terraform output -raw public_ip",
+                        returnStdout: true
+                    ).trim()
 
-		stage('Teardown') {
-			steps {
-				dir("${env.WORKSPACE}") {
-					sh 'docker-compose down'
-				}
-			}
-		}
-	}	
+                    writeFile file: "${env.INVENTORY_FILE}", text: """
+[ec2]
+${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/YOUR_KEY.pem
+"""
+                }
+            }
+        }
+
+        stage('Provision with Ansible') {
+            steps {
+                dir("${env.ANSIBLE_DIR}") {
+                    sh 'ansible-playbook -i inventory.ini deploy.yml'
+                }
+            }
+        }
+    }
 }
+
