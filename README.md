@@ -57,9 +57,18 @@ terraform apply
 
 The public IP address will be printed as an output when the apply step completes. A minimal example is also available under `terraform/project_minimalisticAWS` for experimentation.
 
+## CI/CD with Jenkins
+
+Jenkins pipeline definitions live in the `jenkins/` directory. `jenkinsfile_CI`
+builds the Docker images, spins up the Compose stack, runs a health check
+against the API and then tears everything down. The main `jenkinsfile` example
+goes further by provisioning infrastructure with Terraform, generating an
+Ansible inventory from the resulting public IP and running the playbook to
+deploy the stack on the newly created VM.
+
 ## Project goals
 
-This project was built for learning purposes and demonstrates how Docker, basic CI checks and simple automation fit together. Feel free to adapt it further or integrate additional DevOps tooling.
+This project was built for learning purposes and shows how Docker and automation with Jenkins fit together. Feel free to adapt it further or integrate additional DevOps tooling.
 
 ## 📸 Screenshots
 
