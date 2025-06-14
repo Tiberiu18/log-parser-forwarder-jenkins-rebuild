@@ -81,7 +81,7 @@ if __name__ == "__main__":
             listOfBatches = createBatchesOfTen(logfile_content)
             response = sendBatch(URL,listOfBatches)
             print(response.text)
-        except Exception as ex:
+        except Exception as exc:
             # We already have parser_errors.inc(), so we'll just log now
             print("[MAIN] Unhandled error:", exc)
         time.sleep(60)
