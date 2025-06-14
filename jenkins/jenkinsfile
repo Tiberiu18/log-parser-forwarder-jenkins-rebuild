@@ -37,7 +37,10 @@ pipeline {
 
 		stage('Test API') {
 			steps {
-				sh 'sleep 5 && curl -s http://log-receiver-api:3000/health'
+				sh '''
+					sleep 5
+					docker-compose exec -T log-receiver-api curl -sf http://localhost:3000/health
+				'''
 			}
 		}
 
