@@ -10,13 +10,17 @@ pipeline {
 		
 		stage('Build containers') {
 			steps {
-				sh 'docker-compose build'
+				dir("${env.WORKSPACE}") {
+					sh 'docker-compose build'
+				}
 			}
 		}
 
 		stage('Start services') {
 			steps {
-				sh 'docker-compose up -d'
+				dir("${env.WORKSPACE}") {
+					sh 'docker-compose up -d'
+				}
 			}
 		}
 
@@ -28,7 +32,9 @@ pipeline {
 
 		stage('Teardown') {
 			steps {
-				sh 'docker-compose down'
+				dir("${env.WORKSPACE}") {
+					sh 'docker-compose down'
+				}
 			}
 		}
 	}	
